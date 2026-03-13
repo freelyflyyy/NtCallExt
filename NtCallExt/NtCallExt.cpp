@@ -54,14 +54,32 @@ DWORD64 NTAPI X64NtCallExt::GetProcAddress64(DWORD64 hMod, const char* funcName)
 }
 
 DWORD64 NTAPI X64NtCallExt::GetModuleLdrEntry64(const wchar_t* moduleName) {
-	return DWORD64();
+    if ( !moduleName ) return 0;
+    PEB64* _peb64 = (PEB64*) GetPeb64();
+    if ( !_peb64->Ldr ) {
+        return 0;
+    }
+    PEB_LDR_DATA64* _ldr64 = (PEB_LDR_DATA64*) _peb64->Ldr;
+    DWORD64 head = _peb64->Ldr + offsetof(PEB_LDR_DATA64, InLoadOrderModuleList);
+    DWORD64 current = _ldr64->InLoadOrderModuleList.Flink;
+    while ( head != current && current != 0 ) {
+        LDR_DATA_TABLE_ENTRY64* entry = (LDR_DATA_TABLE_ENTRY64*) current;
+        if ( entry->BaseDllName.Buffer != 0 && entry->BaseDllName.Length > 0 ) {
+            if ( !_wcsnicmp((WCHAR*) entry->BaseDllName.Buffer, moduleName, entry->BaseDllName.Length / sizeof(WCHAR)) ) {
+                return current;
+            }
+        }
+        current = entry->InLoadOrderLinks.Flink;
+    }
+    return 0;
 }
 
 DWORD64 NTAPI X64NtCallExt::GetModuleBase64(const wchar_t* moduleName) {
-	if ( !moduleName ) {
-		return 0;
-	}
-	return (DWORD64) GetModuleHandleW(moduleName);
+    if ( !moduleName ) {
+        return 0;
+    }
+    LDR_DATA_TABLE_ENTRY64* entry = (LDR_DATA_TABLE_ENTRY64*) GetModuleLdrEntry64(moduleName);
+    return entry->DllBase;
 }
 
 DWORD64 NTAPI X64NtCallExt::GetNtdll64() {
@@ -140,43 +158,42 @@ DWORD64 NTAPI Wow64NtCallExt::GetProcAddress64(DWORD64 hMod,
     return rect;
 }
 
-DWORD64 NTAPI Wow64NtCallExt::GetModuleLdrEntry64(const wchar_t * moduleName) {
+DWORD64 NTAPI Wow64NtCallExt::GetModuleLdrEntry64(const wchar_t* moduleName) {
     DWORD64 teb64Addr = GetTeb64();
-    if (teb64Addr == 0) {
+    if ( teb64Addr == 0 ) {
         return 0;
     }
 
-    TEB64 _teb64 = {0};
-    memcpy64( & _teb64, teb64Addr, sizeof(TEB64));
+    TEB64 _teb64 = { 0 };
+    memcpy64(&_teb64, teb64Addr, sizeof(TEB64));
 
-    if (_teb64.ProcessEnvironmentBlock == 0) {
+    if ( _teb64.ProcessEnvironmentBlock == 0 ) {
         return 0;
     }
 
-    PEB64 _peb64 = {0};
-    memcpy64( & _peb64, _teb64.ProcessEnvironmentBlock, sizeof(PEB64));
+    PEB64 _peb64 = { 0 };
+    memcpy64(&_peb64, _teb64.ProcessEnvironmentBlock, sizeof(PEB64));
 
-    if (_peb64.Ldr == 0) {
+    if ( _peb64.Ldr == 0 ) {
         return 0;
     }
 
     PEB_LDR_DATA64 _ldr64;
-    memcpy64( & _ldr64, _peb64.Ldr, sizeof(PEB_LDR_DATA64));
+    memcpy64(&_ldr64, _peb64.Ldr, sizeof(PEB_LDR_DATA64));
 
     //head
     DWORD64 head = _peb64.Ldr + offsetof(PEB_LDR_DATA64, InLoadOrderModuleList);
     DWORD64 current = _ldr64.InLoadOrderModuleList.Flink;
 
-    while (current != head && current != 0) {
-        LDR_DATA_TABLE_ENTRY64 entry = {0};
-        memcpy64( & entry, current, sizeof(LDR_DATA_TABLE_ENTRY64));
+    while ( current != head && current != 0 ) {
+        LDR_DATA_TABLE_ENTRY64 entry = { 0 };
+        memcpy64(&entry, current, sizeof(LDR_DATA_TABLE_ENTRY64));
 
-        if (entry.BaseDllName.Buffer != 0 && entry.BaseDllName.Length > 0) {
-            std::vector < wchar_t > nameBuffer(entry.BaseDllName.MaximumLength / sizeof(wchar_t) + 1);
+        if ( entry.BaseDllName.Buffer != 0 && entry.BaseDllName.Length > 0 ) {
+            std::wstring nameBuffer(entry.BaseDllName.Length / sizeof(wchar_t), L'\0');
             memcpy64(nameBuffer.data(), entry.BaseDllName.Buffer, entry.BaseDllName.Length);
-            nameBuffer[entry.BaseDllName.Length / sizeof(wchar_t)] = L'\0';
 
-            if (_wcsicmp(nameBuffer.data(), moduleName) == 0) {
+            if ( _wcsnicmp(nameBuffer.data(), moduleName, entry.BaseDllName.Length / sizeof(wchar_t)) == 0 ) {
                 return current;
             }
         }
