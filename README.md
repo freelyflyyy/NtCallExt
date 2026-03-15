@@ -1,5 +1,7 @@
 # NtCallExt
-A hacker tool implemented in C++ for x86/x64 Windows platforms, featuring the heavens gate technology for Wow64
+A hacker tool implemented in C++ for x86/x64 Windows platforms, 
+featuring the heavens gate technology for Wow64 
+so that we can get 64-bit ntdll.dll,load 64-bit kernel32.dll or other dll files and call 64-bit functions
 
 ---
 
