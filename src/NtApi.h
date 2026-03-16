@@ -28,7 +28,6 @@ struct _PROCESS_BASIC_INFORMATION_T {
 typedef _PROCESS_BASIC_INFORMATION_T<DWORD> PROCESS_BASIC_INFORMATION32;
 typedef _PROCESS_BASIC_INFORMATION_T<DWORD64> PROCESS_BASIC_INFORMATION64;
 
-#pragma pack(push, 1)
 template <class T>
 struct _LIST_ENTRY_T {
 	T Flink;
@@ -216,7 +215,6 @@ struct _PEB_T {
 	T pImageHeaderHash;
 	T TracingFlags;
 };
-#pragma pack(pop)
 
 template <class T>
 struct _CURDIR_T {

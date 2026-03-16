@@ -1,6 +1,8 @@
 # === CMake 产生的中间文件 ===
 # 忽略所有名为 build 的构建目录（如 NtCallExt/build/）
 build/
+# 忽略 CMake 生成的头文件
+include/
 # 忽略 Visual Studio 默认的 CMake 构建输出目录
 out/
 # 忽略 CMake 自动生成的缓存和脚本
@@ -10,9 +12,6 @@ CMakeScripts/
 cmake_install.cmake
 install/
 Makefile
-#忽略gitignore文件
-.gitignore
-.gitattributes
 # 忽略 Ninja 构建生成的日志
 .ninja_deps
 .ninja_log
