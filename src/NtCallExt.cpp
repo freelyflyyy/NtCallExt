@@ -52,6 +52,43 @@ namespace MemX {
         return (DWORD64) GetProcAddress((HMODULE) hMod, funcName);
     }
 
+    DWORD64 X64NtCallExt::GetSyscallNumber64(DWORD64 hMod, const char* funcName) {
+        if ( !hMod || !funcName ) return 0;
+        DWORD64 funcAddr64 = GetProcAddress64(hMod, funcName);
+        if ( !funcAddr64 ) return 0;
+
+        //check the function addr was hooked
+        auto CheckHook = [this] (DWORD64& funcAddr) -> WORD {
+            BYTE* opcodes = (BYTE*)funcAddr;
+            if ( opcodes[ 0 ] == 0x4C && opcodes[ 1 ] == 0x8B && opcodes[ 2 ] == 0xD1 && opcodes[ 3 ] == 0xB8 ) {
+                return opcodes[ 5 ] << 8 | opcodes[ 4 ];
+            }
+            return 0;
+        };
+
+        auto _seachImpl = [CheckHook] (auto&& self, DWORD64 upAddr, DWORD64 downAddr, WORD depth = 0) -> WORD {
+            if ( depth >= 500 ) return 0;
+
+            WORD upSSN = CheckHook(upAddr);
+            WORD downSSN = CheckHook(downAddr);
+
+            if ( upSSN != 0 && downSSN != 0 ) {
+                if ( downSSN - upSSN == depth * 2 ) {
+                    return upSSN + depth;
+                }
+            }
+            return self(self, upAddr - 0x20, downAddr + 0x20, depth + 1);
+        };
+
+		//check the function self was hooked
+        WORD baseSSN = CheckHook(funcAddr64);
+        if ( baseSSN != 0 ) {
+            return baseSSN;
+        }
+
+        return _seachImpl(_seachImpl, funcAddr64 - 0x20, funcAddr64 + 0x20, 1);
+    }
+
     DWORD64 NTAPI X64NtCallExt::GetModuleLdrEntry64(const wchar_t* moduleName) {
         if ( !moduleName ) return 0;
         PEB64* _peb64 = (PEB64*) GetPeb64();
@@ -140,8 +177,8 @@ namespace MemX {
         return _peb64.v;
     }
 
-    DWORD64 NTAPI Wow64NtCallExt::GetProcAddress64(DWORD64 hMod,
-                                                   const char* funcName) {
+    DWORD64 NTAPI Wow64NtCallExt::GetProcAddress64(DWORD64 hMod, const char* funcName) {
+        if ( !hMod || !funcName ) return 0;
         static DWORD64 ldrGetProcedureAddress = 0;
         if ( !ldrGetProcedureAddress ) {
             ldrGetProcedureAddress = GetLdrGetProcedureAddress();
@@ -155,6 +192,44 @@ namespace MemX {
         DWORD64 rect = 0;
         X64CallVa(ldrGetProcedureAddress, 4, (DWORD64) hMod, (DWORD64) &fName, (DWORD64) 0, (DWORD64) &rect);
         return rect;
+    }
+
+    DWORD64 Wow64NtCallExt::GetSyscallNumber64(DWORD64 hMod, const char* funcName) {
+        if ( !hMod || !funcName ) return 0;
+		DWORD64 funcAddr64 = GetProcAddress64(hMod, funcName);
+        if ( !funcAddr64 ) return 0;
+
+        //check the function addr was hooked
+		auto CheckHook = [this] (DWORD64& funcAddr) -> WORD {
+            BYTE opcodes[ 8 ] = { 0 };
+            memcpy64(&opcodes, funcAddr, sizeof(DWORD64));
+            if ( opcodes[ 0 ] == 0x4C && opcodes[ 1 ] == 0x8B && opcodes[ 2 ] == 0xD1 && opcodes[ 3 ] == 0xB8 ) {
+				return opcodes[ 5 ] << 8 | opcodes[ 4 ];
+            }
+            return 0;
+        };
+
+        auto _seachImpl = [CheckHook] (auto&& self, DWORD64 upAddr, DWORD64 downAddr, WORD depth = 0) -> WORD {
+            if ( depth >= 500 ) return 0;
+
+            WORD upSSN = CheckHook(upAddr);
+            WORD downSSN = CheckHook(downAddr);
+
+            if ( upSSN != 0 && downSSN != 0 ) {
+                if ( downSSN - upSSN == depth * 2 ) {
+                    return upSSN + depth;
+                }
+            }
+            return self(self, upAddr - 0x20, downAddr + 0x20, depth + 1);
+        };
+
+        //check the function self was hooked
+        WORD baseSSN = CheckHook(funcAddr64);
+        if ( baseSSN != 0 ) {
+            return baseSSN;
+        }
+
+		return _seachImpl(_seachImpl, funcAddr64 - 0x20, funcAddr64 + 0x20, 1);
     }
 
     DWORD64 NTAPI Wow64NtCallExt::GetModuleLdrEntry64(const wchar_t* moduleName) {
