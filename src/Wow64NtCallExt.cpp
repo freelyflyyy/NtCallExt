@@ -1,4 +1,4 @@
-#include "Wow64NtCallExt.h"
+﻿#include "Wow64NtCallExt.h"
 
 namespace MemX {
     DWORD64 NTAPI Wow64NtCallExt::GetProcAddress64(DWORD64 hMod, const char* funcName) {
@@ -137,10 +137,10 @@ namespace MemX {
 
             and esp, 0xFFFFFFF0
 
-            //切换64位
+            //切换64�?
             x64_start
 
-            //压入前四个参数
+            //压入前四个参�?
             rex_w mov ecx, _rcx.dw[ 0 ]
             rex_w mov edx, _rdx.dw[ 0 ]
 
@@ -156,40 +156,124 @@ namespace MemX {
             jnz _no_adjust
             sub esp, 8
 
-            //遵循Windows参数从右到左的规则，将edi寄存器移到最后一个参数
+            //遵循Windows参数从右到左的规则，将edi寄存器移到最后一个参�?
             _no_adjust:
             push edi
-                rex_w mov edi, restArgs.dw[ 0 ]
-                rex_w test eax, eax
-                jz _ls_e
-                rex_w lea edi, dword ptr[ edi + 8 * eax - 8 ]
+            rex_w mov edi, restArgs.dw[ 0 ]
+            rex_w test eax, eax
+            jz _ls_e
+            rex_w lea edi, dword ptr[ edi + 8 * eax - 8 ]
 
-                _ls :
-                rex_w test eax, eax
-                jz _ls_e
-                push dword ptr[ edi ]
-                rex_w sub edi, 8
-                rex_w sub eax, 1
-                jmp _ls
+            _ls :
+            rex_w test eax, eax
+            jz _ls_e
+            push dword ptr[ edi ]
+            rex_w sub edi, 8
+            rex_w sub eax, 1
+            jmp _ls
 
-                //预留栈空间
-                _ls_e :
+            //预留栈空�?
+            _ls_e :
             rex_w sub esp, 0x20
-                call func
+            call func
+            
 
-                //恢复环境
-                rex_w mov ecx, _argC.dw[ 0 ]
-                rex_w lea esp, dword ptr[ esp + 8 * ecx + 0x20 ]
-                pop edi
-                rex_w mov _rax.dw[ 0 ], eax
+            //恢复环境
+            rex_w mov ecx, _argC.dw[ 0 ]
+            rex_w lea esp, dword ptr[ esp + 8 * ecx + 0x20 ]
+            pop edi
+            rex_w mov _rax.dw[ 0 ], eax
 
-                x64_end
+            x64_end
 
-                mov ax, ds
-                mov ss, ax
-                mov esp, back_esp
-                mov ax, back_fs
-                mov fs, ax
+            mov ax, ds
+            mov ss, ax
+            mov esp, back_esp
+            mov ax, back_fs
+            mov fs, ax
+        }
+        #endif
+        va_end(args);
+        return _rax.v;
+    }
+
+    DWORD64 __cdecl Wow64NtCallExt::X64SysCallVa(const WORD& ssn, int argC, ...) {
+        if ( ssn == 0 ) return 0;
+
+        va_list args;
+        va_start(args, argC);
+        Reg64 _rcx = { (argC > 0) ? argC--, va_arg(args, DWORD64) : 0 };
+        Reg64 _rdx = { (argC > 0) ? argC--, va_arg(args, DWORD64) : 0 };
+        Reg64 _r8 = { (argC > 0) ? argC--,va_arg(args, DWORD64) : 0 };
+        Reg64 _r9 = { (argC > 0) ? argC--,va_arg(args, DWORD64) : 0 };
+        Reg64 _rax = { 0 };
+
+        Reg64 restArgs = { (DWORD64) args };
+        Reg64 _argC = { (DWORD64) argC };
+        DWORD back_esp = 0;
+        WORD back_fs = 0;
+        #ifdef _M_IX86
+        __asm {
+            mov back_fs, fs
+            mov eax, 0x2B
+            mov fs, ax
+
+            mov back_esp, esp
+
+            and esp, 0xFFFFFFF0
+
+            x64_start
+
+            rex_w mov ecx, _rcx.dw[ 0 ]
+            x64_push(rcx)
+            x64_pop(r10)
+            rex_w mov edx, _rdx.dw[ 0 ]
+
+            push _r8.v
+            x64_pop(r8)
+
+            push _r9.v
+            x64_pop(r9)
+
+            rex_w mov eax, _argC.dw[ 0 ]
+            test al, 1
+            jnz _no_adjust
+            sub esp, 8
+
+            _no_adjust:
+            push edi
+            rex_w mov edi, restArgs.dw[ 0 ]
+            rex_w test eax, eax
+            jz _ls_e
+            rex_w lea edi, dword ptr[ edi + 8 * eax - 8 ]
+
+            _ls :
+            rex_w test eax, eax
+            jz _ls_e
+            push dword ptr[ edi ]
+            rex_w sub edi, 8
+            rex_w sub eax, 1
+            jmp _ls
+
+            _ls_e :
+            rex_w sub esp, 0x20
+            mov edx, ssn
+            mov eax, [edx]
+            _emit 0x0F
+            _emit 0x05
+
+            rex_w mov ecx, _argC.dw[ 0 ]
+            rex_w lea esp, dword ptr[ esp + 8 * ecx + 0x20 ]
+            pop edi
+            rex_w mov _rax.dw[ 0 ], eax
+
+            x64_end
+
+            mov ax, ds
+            mov ss, ax
+            mov esp, back_esp
+            mov ax, back_fs
+            mov fs, ax
         }
         #endif
         va_end(args);
@@ -261,10 +345,10 @@ namespace MemX {
             mov ecx, sz
 
             mov eax, ecx
-            and eax, 3 //计算除于4的余数
+            and eax, 3 //计算除于4的余�?
             shr ecx, 2 //计算除于4的商
 
-            rep movsd //复制4字节块
+            rep movsd //复制4字节�?
             test eax, eax
             je _w_remain_0
 
@@ -553,7 +637,7 @@ namespace MemX {
         };
         #ifdef _M_IX86
         __asm {
-            // 保存栈指针
+            // 保存栈指�?
             x64_start
             x64_push(r12);
             x64_pop(rax);

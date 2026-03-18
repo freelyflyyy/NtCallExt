@@ -17,6 +17,7 @@ namespace MemX {
 
         DWORD64 NTAPI GetLdrGetProcedureAddress();
         DWORD64 __cdecl X64CallVa(DWORD64 funcAddr, int argCount, ...);
+		DWORD64 __cdecl X64SysCallVa(const WORD& ssn, int argCount, ...);
         VOID NTAPI memcpy64(VOID* dest, DWORD64 src, SIZE_T sz);
         VOID NTAPI memcpy64(DWORD64 dest, VOID* src, SIZE_T sz);
 
@@ -24,6 +25,12 @@ namespace MemX {
         NTSTATUS X64Call(const DWORD64& funcAddr, Args&&... args) {
             if ( !funcAddr ) return ERROR_INVALID_ADDRESS;
             return (NTSTATUS) X64CallVa((DWORD64) funcAddr, (int) sizeof...(Args), (DWORD64) std::forward<Args>(args)...);
+        }
+
+        template<typename... Args>
+        NTSTATUS X64SysCall(const WORD& ssn, Args&&...args) {
+            if ( !ssn ) return STATUS_INVALID_PARAMETER;
+            return 
         }
 
         // 32bit native functions
