@@ -12,20 +12,15 @@ function(add_auto_refactor_headers target_name)
         if(HEADER_FILE MATCHES "\\.h$" OR HEADER_FILE MATCHES "\\.hpp$")
             
             get_filename_component(ABS_HEADER "${HEADER_FILE}" REALPATH)
-            get_filename_component(FILE_NAME_ONLY "${ABS_HEADER}" NAME)
+            get_filename_component(FILE_NAME_ONLY "${ABS_HEADER}" NAME) 
 
-            file(RELATIVE_PATH REL_PATH "${ABS_SRC_DIR}" "${ABS_HEADER}")
-            
-            set(OUTPUT_FILE "${INCLUDE_DEST_DIR}/${REL_PATH}")
-            
-            get_filename_component(OUTPUT_DIR "${OUTPUT_FILE}" DIRECTORY)
-            file(MAKE_DIRECTORY "${OUTPUT_DIR}")
+            set(OUTPUT_FILE "${INCLUDE_DEST_DIR}/${FILE_NAME_ONLY}")
            
             add_custom_command(OUTPUT "${OUTPUT_FILE}" 
-                               COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                               "${ABS_HEADER}" "${OUTPUT_FILE}"
-                               DEPENDS "${ABS_HEADER}"
-                               COMMENT "Physically copying: ${FILE_NAME_ONLY} to include/${target_name}/include/")
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${ABS_HEADER}" "${OUTPUT_FILE}"
+                    DEPENDS "${ABS_HEADER}"
+                    COMMENT "Physically copying: ${FILE_NAME_ONLY} to include/${target_name}/include/")
             
             list(APPEND REFRACTORED_HEADERS "${OUTPUT_FILE}")
         endif()

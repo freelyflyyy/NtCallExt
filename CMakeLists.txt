@@ -13,7 +13,7 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-file(GLOB NTCALLEXT_HEADERS "src/*.h" "src/*.hpp")
+file(GLOB_RECURSE NTCALLEXT_HEADERS "src/*.h" "src/*.hpp")
 file(GLOB NTCALLEXT_SOURCES "src/*.cpp")
 
 add_library(NtCallExt STATIC 
@@ -21,10 +21,7 @@ add_library(NtCallExt STATIC
     ${NTCALLEXT_SOURCES}
 )
 
-target_precompile_headers(NtCallExt PRIVATE "src/stdafx.h")
-
-target_include_directories(NtCallExt PUBLIC 
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_precompile_headers(NtCallExt PRIVATE "src/pch/stdafx.h")
 
 add_auto_refactor_headers(NtCallExt)
 
