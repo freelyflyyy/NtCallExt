@@ -456,7 +456,7 @@ namespace MemX {
 
         DWORD funcAddr = 0;
 
-        NTSTATUS status = fnLdrGetProcedureAddress(hMod, (DWORD) fName, 0, &funcAddr);
+        NTSTATUS status = fnLdrGetProcedureAddress(hMod, (DWORD64) fName, 0, &funcAddr);
         if ( NT_SUCCESS(status) ) {
             return funcAddr;
         }

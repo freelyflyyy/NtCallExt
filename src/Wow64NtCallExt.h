@@ -23,7 +23,7 @@ namespace MemX {
 
         template<typename... Args>
         NTSTATUS X64Call(const DWORD64& funcAddr, Args&&... args) {
-            if ( !funcAddr ) return ERROR_INVALID_ADDRESS;
+            if ( !funcAddr ) return STATUS_INVALID_ADDRESS;
             return (NTSTATUS) X64CallVa((DWORD64) funcAddr, (int) sizeof...(Args), (DWORD64) std::forward<Args>(args)...);
         }
 
