@@ -88,3 +88,5 @@ namespace MemX {
         std::shared_mutex _mutex;
     };
 }
+#include "Wow64NtCallExt.h"
+#include "X64NtCallExt.h"

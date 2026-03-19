@@ -1,5 +1,5 @@
 #include <iostream>
-#include <Wow64NtCallExt.h>
+#include <NtCallExt.h>
 
 using namespace MemX;
 int main() {

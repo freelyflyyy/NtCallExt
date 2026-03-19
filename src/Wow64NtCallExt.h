@@ -30,7 +30,7 @@ namespace MemX {
         template<typename... Args>
         NTSTATUS X64SysCall(const WORD& ssn, Args&&...args) {
             if ( !ssn ) return STATUS_INVALID_PARAMETER;
-            return 
+			return (NTSTATUS) X64SysCallVa(ssn, (int) sizeof...(Args), (DWORD64) std::forward<Args>(args)...);
         }
 
         // 32bit native functions
