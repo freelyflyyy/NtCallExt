@@ -456,7 +456,7 @@ namespace MemX {
             x64_start
             x64_push(r12);
             pop _teb64.dw[ 0 ]
-                x64_end
+            x64_end
         }
         #endif
         return _teb64.v;

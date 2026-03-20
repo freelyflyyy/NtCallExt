@@ -1,8 +1,8 @@
 # NtCallExt
-A hacker tool implemented in C++ for x86/x64 Windows platforms, 
-featuring the heavens gate technology for Wow64 
-so that we can get 64-bit ntdll.dll,load 64-bit kernel32.dll or other dll files and call 64-bit functions
 
+A hacker tool implemented in C++ for x86/x64 Windows platforms, 
+featuring the heavens gate, hells gate and halos gate technology for Wow64.
+By doing this, we can load 64-bit DLLs and get 64-bit functions, and invoke them—even performing direct Ring 0 (r0) level syscalls
 ---
 
 ## Features
@@ -20,8 +20,10 @@ The following are the main functions of NtCallExt
 | `GetModuleBase64` | **[Ex]** | Get the base address of a specified module in 64-bit |
 | `GetModuleLdrEntry64` | **[Ex]** | Get the ***LDR_DATA_TABLE_ENTRY*** structure of a specified module in 64-bit |
 | `GetProcAddress64` | **[Ex]** | Get the address of a specified function in 64-bit |
+| `GetSyscallNumber64` | **[Ex]** | Get the SSN of a specified function in 64-bit |
 | `GetLdrGetProcedureAddress` | **[Ex]** | Get the address of the ***LdrGetProcedureAddress*** function in 64-bit |
 | `X64Call` | **[Ex]** | Call a specified function in 64-bit |
+| `X64SysCall` | **[Ex]** | SysCall a specified function in 64-bit |
 | `memcpy64` | **[Ex]** | Copy memory in 64-bit |
 | `GetTeb32` | | Get the 32-bit TEB base address |
 | `GetPeb32` | | Get the 32-bit PEB base address |

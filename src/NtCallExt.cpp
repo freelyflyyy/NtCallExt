@@ -4,7 +4,7 @@
 #pragma warning(disable: 4251)
 
 namespace MemX {
-    VOID NTAPI NtCallExt::MakeUTFStrVa(LPCWSTR lpString, LPBYTE outBuffer, SIZE_T pointerSize) {
+    VOID NTAPI NtCallExt::_MakeUTFStrVa(LPCWSTR lpString, LPBYTE outBuffer, SIZE_T pointerSize) {
         if ( !lpString || !outBuffer ) return;
         SIZE_T len = wcslen(lpString);
 
@@ -24,7 +24,7 @@ namespace MemX {
         outStr[ len ] = L'\0';
     }
 
-    VOID NtCallExt::MakeANSIStrVa(LPCSTR lpString, LPBYTE outBuffer, SIZE_T pointerSize) {
+    VOID NtCallExt::_MakeANSIStrVa(LPCSTR lpString, LPBYTE outBuffer, SIZE_T pointerSize) {
         if ( !lpString || !outBuffer ) return;
         SIZE_T len = strlen(lpString);
 

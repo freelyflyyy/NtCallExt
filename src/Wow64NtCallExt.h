@@ -19,47 +19,6 @@ namespace MemX {
         VOID NTAPI memcpy64(VOID* dest, DWORD64 src, SIZE_T sz);
         VOID NTAPI memcpy64(DWORD64 dest, VOID* src, SIZE_T sz);
 
-        template<typename... Args>
-        NTSTATUS X64Call(const DWORD64& funcAddr, Args&&... args) {
-            if ( !funcAddr ) return STATUS_INVALID_ADDRESS;
-
-            auto _buildCallAction = [funcAddr] (std::string& _shellcode) {
-                BYTE call_stub[] = {
-                    0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov rax, funcAddr
-                    0xFF, 0xD0                                                  // call rax
-                };
-                *(DWORD64*) (call_stub + 2) = funcAddr;
-                _shellcode.append((char*) call_stub, sizeof(call_stub));
-            };
-            constexpr DWORD safeSize = sizeof...(Args) < 4 ? 4 : sizeof...(Args);
-            const DWORD64 _argArray[ safeSize ] = { (DWORD64) std::forward<Args>(args)... };
-
-            return (NTSTATUS) _X64BuildExecute(_buildCallAction, _argArray, sizeof...(Args));
-        }
-
-        template<typename... Args>
-        NTSTATUS X64SysCall(const WORD& ssn, Args&&... args) {
-            if ( !ssn ) return STATUS_INVALID_PARAMETER;
-
-            auto _buildSysCallAction = [ssn] (std::string& _shellcode) {
-                BYTE syscall_stub[] = {
-                    0x4C, 0x8D, 0x1D, 0x0C, 0x00, 0x00, 0x00,                  // lea r11, [rip + 12] 
-                    0x41, 0x53,                                                // push r11 
-                    0x49, 0x89, 0xCA,                                          // mov r10, rcx
-                    0xB8, 0x00, 0x00, 0x00, 0x00,                              // mov eax, ssn
-                    0x0F, 0x05,                                                // syscall
-                    0x48, 0x83, 0xC4, 0x08                                     // add rsp, 8
-                };
-                *(DWORD*) (syscall_stub + 13) = (DWORD) ssn;
-                _shellcode.append((char*) syscall_stub, sizeof(syscall_stub));
-            };
-
-            constexpr DWORD safeSize = sizeof...(Args) < 4 ? 4 : sizeof...(Args);
-            const DWORD64 _argArray[ safeSize ] = { (DWORD64) std::forward<Args>(args)... };
-
-            return (NTSTATUS) _X64BuildExecute(_buildSysCallAction, _argArray, sizeof...(Args));
-        }
-
         // 32bit native functions
         DWORD NTAPI GetProcAddress32(DWORD hMod, const char* funcName);
         DWORD NTAPI GetModuleBase32(const wchar_t* moduleName);
