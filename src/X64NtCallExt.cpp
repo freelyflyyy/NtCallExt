@@ -1,4 +1,6 @@
+#pragma once
 #include "X64NtCallExt.h"
+#include "NtAsm.h"
 
 namespace MemX {
 	DWORD64 NTAPI X64NtCallExt::GetProcAddress64(DWORD64 hMod, const char* funcName) {
@@ -134,52 +136,11 @@ namespace MemX {
 	}
 
 	DWORD64 X64NtCallExt::_X64BuildExecute(std::function<void(std::string&)> _shellcode, const DWORD64* _pParam, const DWORD& _argC) {
-		BYTE prepare_env[] = {
-			0x55,                                                       // push rbp
-			0x48, 0x89, 0xE5,                                           // mov rbp, rsp
-			0x53,                                                       // push rbx
-			0x56,                                                       // push rsi
-			0x57,                                                       // push rdi
-			0x41, 0x54,                                                 // push r12
-			0x48, 0xBE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov rsi, _pParam
-			0x49, 0xBC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov r12, _argC
-			0x4C, 0x89, 0xE0,                                           // mov rax, r12
-			0x49, 0x83, 0xFC, 0x04,                                     // cmp r12, 4
-			0x7F, 0x07,                                                 // jg +7
-			0x48, 0xC7, 0xC0, 0x04, 0x00, 0x00, 0x00,                   // mov rax, 4
-			0x48, 0xC1, 0xE0, 0x03,                                     // shl rax, 3
-			0x48, 0x29, 0xC4,                                           // sub rsp, rax
-			0x48, 0x83, 0xE4, 0xF0,                                     // and rsp, 0xFFFFFFFFFFFFFFF0
-			0x48, 0x8B, 0x0E,                                           // mov rcx, [rsi]
-			0x48, 0x8B, 0x56, 0x08,                                     // mov rdx, [rsi + 8]
-			0x4C, 0x8B, 0x46, 0x10,                                     // mov r8, [rsi + 16]
-			0x4C, 0x8B, 0x4E, 0x18,                                     // mov r9, [rsi + 24]
-			0x49, 0x83, 0xFC, 0x04,                                     // cmp r12, 4
-			0x7E, 0x17,                                                 // jle _ready
-			0x49, 0xC7, 0xC3, 0x04, 0x00, 0x00, 0x00,                   // mov r11, 4
-			// _loop:
-			0x4A, 0x8B, 0x04, 0xDE,                                     // mov rax, [rsi + r11 * 8]
-			0x4A, 0x89, 0x04, 0xDC,                                     // mov [rsp + r11 * 8], rax (★ 已修复为精准压栈)
-			0x49, 0xFF, 0xC3,                                           // inc r11
-			0x4D, 0x39, 0xE3,                                           // cmp r11, r12
-			0x7C, 0xF0                                                  // jl _loop
-			// _ready:
-		};
-
-		BYTE restore_env[] = {
-			0x48, 0x8D, 0x65, 0xE0,                                     //lea rsp,[ rbp - 32 ]
-			0x41, 0x5C,				                                    //pop r12
-			0x5F,					                                    //pop rdi
-			0x5E,					                                    //pop rsi
-			0x5B,					                                    //pop rbx
-			0x5D,					                                    //pop rbp
-			0xC3					                                    //ret
-		};
-
-		*(DWORD64*) (prepare_env + 11) = (DWORD64) _pParam;
-		*(DWORD64*) (prepare_env + 21) = (DWORD64) _argC;
+		*(DWORD64*) (prepare_env + 2) = (DWORD64) _pParam;
+		*(DWORD64*) (prepare_env + 12) = (DWORD64) _argC;
 
 		std::string shellcode;
+		shellcode.append((char*) backup_env, sizeof(backup_env));
 		shellcode.append((char*) prepare_env, sizeof(prepare_env));
 		_shellcode(shellcode);
 		shellcode.append((char*) restore_env, sizeof(restore_env));

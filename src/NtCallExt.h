@@ -83,6 +83,10 @@ namespace MemX {
             return GetFunc64(GetNtdll64(), funcName);
         }
 
+        private:
+        virtual DWORD64 NTAPI _X64BuildExecute(std::function<void(std::string&)> _shellcode, const DWORD64* _pParam, const DWORD& _argC) = 0;
+        virtual DWORD64 NTAPI _X64DisptachExecute(std::string _shellcode) = 0;
+
         protected:
         std::unordered_map<std::string, DWORD64> _cache;
         std::shared_mutex _mutex;

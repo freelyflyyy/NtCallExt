@@ -60,7 +60,7 @@ namespace MemX {
 		}
 
 		private:
-		DWORD64 NTAPI _X64BuildExecute(std::function<void(std::string&)> _shellcode, const DWORD64* _pParam, const DWORD& _argC);
-		DWORD64 NTAPI _X64DisptachExecute(std::string _shellcode);
+		DWORD64 NTAPI _X64BuildExecute(std::function<void(std::string&)> _shellcode, const DWORD64* _pParam, const DWORD& _argC) override;
+		DWORD64 NTAPI _X64DisptachExecute(std::string _shellcode) override;
 	};
 }

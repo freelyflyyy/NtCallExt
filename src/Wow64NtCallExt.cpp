@@ -1,4 +1,6 @@
-﻿#include "Wow64NtCallExt.h"
+﻿#pragma once
+#include "Wow64NtCallExt.h"
+#include "NtAsm.h"
 
 namespace MemX {
     DWORD64 NTAPI Wow64NtCallExt::GetProcAddress64(DWORD64 hMod, const char* funcName) {
@@ -14,7 +16,7 @@ namespace MemX {
         MakeANSIStr<DWORD64>(funcName, fName);
 
         DWORD64 rect = 0;
-        X64CallVa(ldrGetProcedureAddress, 4, (DWORD64) hMod, (DWORD64) &fName, (DWORD64) 0, (DWORD64) &rect);
+        X64Call(ldrGetProcedureAddress, (DWORD64) hMod, (DWORD64) &fName, (DWORD64) 0, (DWORD64) &rect);
         return rect;
     }
 
@@ -109,177 +111,6 @@ namespace MemX {
         memcpy64(&entry, ldrEntry, sizeof(LDR_DATA_TABLE_ENTRY64));
         return entry.DllBase;
     }
-
-    #pragma warning(push)
-    #pragma warning(disable: 4409)
-    DWORD64 __cdecl Wow64NtCallExt::X64CallVa(DWORD64 func, int argC, ...) {
-        if ( func == 0 ) return 0;
-
-        va_list args;
-        va_start(args, argC);
-        Reg64 _rcx = { (argC > 0) ? argC--, va_arg(args, DWORD64) : 0 };
-        Reg64 _rdx = { (argC > 0) ? argC--, va_arg(args, DWORD64) : 0 };
-        Reg64 _r8 = { (argC > 0) ? argC--,va_arg(args, DWORD64) : 0 };
-        Reg64 _r9 = { (argC > 0) ? argC--,va_arg(args, DWORD64) : 0 };
-        Reg64 _rax = { 0 };
-
-        Reg64 restArgs = { (DWORD64) args };
-        Reg64 _argC = { (DWORD64) argC };
-        DWORD back_esp = 0;
-        WORD back_fs = 0;
-        #ifdef _M_IX86
-        __asm {
-            mov back_fs, fs
-            mov eax, 0x2B
-            mov fs, ax
-
-            mov back_esp, esp
-
-            and esp, 0xFFFFFFF0
-
-            //切换64�?
-            x64_start
-
-            //压入前四个参�?
-            rex_w mov ecx, _rcx.dw[ 0 ]
-            rex_w mov edx, _rdx.dw[ 0 ]
-
-            push _r8.v
-            x64_pop(r8)
-
-            push _r9.v
-            x64_pop(r9)
-
-            rex_w mov eax, _argC.dw[ 0 ]
-            //压入剩余参数
-            test al, 1
-            jnz _no_adjust
-            sub esp, 8
-
-            //遵循Windows参数从右到左的规则，将edi寄存器移到最后一个参�?
-            _no_adjust:
-            push edi
-            rex_w mov edi, restArgs.dw[ 0 ]
-            rex_w test eax, eax
-            jz _ls_e
-            rex_w lea edi, dword ptr[ edi + 8 * eax - 8 ]
-
-            _ls :
-            rex_w test eax, eax
-            jz _ls_e
-            push dword ptr[ edi ]
-            rex_w sub edi, 8
-            rex_w sub eax, 1
-            jmp _ls
-
-            //预留栈空�?
-            _ls_e :
-            rex_w sub esp, 0x20
-            call func
-            
-
-            //恢复环境
-            rex_w mov ecx, _argC.dw[ 0 ]
-            rex_w lea esp, dword ptr[ esp + 8 * ecx + 0x20 ]
-            pop edi
-            rex_w mov _rax.dw[ 0 ], eax
-
-            x64_end
-
-            mov ax, ds
-            mov ss, ax
-            mov esp, back_esp
-            mov ax, back_fs
-            mov fs, ax
-        }
-        #endif
-        va_end(args);
-        return _rax.v;
-    }
-
-    DWORD64 __cdecl Wow64NtCallExt::X64SysCallVa(const WORD& ssn, int argC, ...) {
-        if ( ssn == 0 ) return 0;
-
-        va_list args;
-        va_start(args, argC);
-        Reg64 _rcx = { (argC > 0) ? argC--, va_arg(args, DWORD64) : 0 };
-        Reg64 _rdx = { (argC > 0) ? argC--, va_arg(args, DWORD64) : 0 };
-        Reg64 _r8 = { (argC > 0) ? argC--,va_arg(args, DWORD64) : 0 };
-        Reg64 _r9 = { (argC > 0) ? argC--,va_arg(args, DWORD64) : 0 };
-        Reg64 _rax = { 0 };
-
-        Reg64 restArgs = { (DWORD64) args };
-        Reg64 _argC = { (DWORD64) argC };
-        DWORD back_esp = 0;
-        WORD back_fs = 0;
-        #ifdef _M_IX86
-        __asm {
-            mov back_fs, fs
-            mov eax, 0x2B
-            mov fs, ax
-
-            mov back_esp, esp
-
-            and esp, 0xFFFFFFF0
-
-            x64_start
-
-            rex_w mov ecx, _rcx.dw[ 0 ]
-            x64_push(rcx)
-            x64_pop(r10)
-            rex_w mov edx, _rdx.dw[ 0 ]
-
-            push _r8.v
-            x64_pop(r8)
-
-            push _r9.v
-            x64_pop(r9)
-
-            rex_w mov eax, _argC.dw[ 0 ]
-            test al, 1
-            jnz _no_adjust
-            sub esp, 8
-
-            _no_adjust:
-            push edi
-            rex_w mov edi, restArgs.dw[ 0 ]
-            rex_w test eax, eax
-            jz _ls_e
-            rex_w lea edi, dword ptr[ edi + 8 * eax - 8 ]
-
-            _ls :
-            rex_w test eax, eax
-            jz _ls_e
-            push dword ptr[ edi ]
-            rex_w sub edi, 8
-            rex_w sub eax, 1
-            jmp _ls
-
-            _ls_e :
-            rex_w sub esp, 0x20
-            mov edx, ssn
-            mov eax, [edx]
-            _emit 0x0F
-            _emit 0x05
-
-            rex_w mov ecx, _argC.dw[ 0 ]
-            rex_w lea esp, dword ptr[ esp + 8 * ecx + 0x20 ]
-            pop edi
-            rex_w mov _rax.dw[ 0 ], eax
-
-            x64_end
-
-            mov ax, ds
-            mov ss, ax
-            mov esp, back_esp
-            mov ax, back_fs
-            mov fs, ax
-        }
-        #endif
-        va_end(args);
-        return _rax.v;
-    }
-    #pragma warning(pop)
 
     VOID NTAPI Wow64NtCallExt::memcpy64(VOID* dest, DWORD64 src, SIZE_T sz) {
         if ( (nullptr == dest) || (0 == src) || (0 == sz) )
@@ -442,7 +273,7 @@ namespace MemX {
         }
         if ( !pLoadLibraryW ) return 0;
 
-        return X64CallVa(pLoadLibraryW, 1, (DWORD64) moduleName);
+        return X64Call(pLoadLibraryW, (DWORD64) moduleName);
     }
 
     DWORD NTAPI Wow64NtCallExt::GetProcAddress32(DWORD hMod, const char* funcName) {
@@ -647,5 +478,46 @@ namespace MemX {
         }
         #endif // _M_IX86
         return _peb64.v;
+    }
+
+
+    DWORD64 Wow64NtCallExt::_X64BuildExecute(std::function<void(std::string&)> _shellcode, const DWORD64* _pParam, const DWORD& _argC) {
+        *(DWORD64*) (prepare_env + 2) = (DWORD64) _pParam;
+        *(DWORD64*) (prepare_env + 12) = (DWORD64) _argC;
+
+        std::string shellcode;
+        shellcode.append((char*) backup_env_x86, sizeof(backup_env_x86));
+        shellcode.append((char*) jmp_x64, sizeof(jmp_x64));
+        shellcode.append((char*) backup_env, sizeof(backup_env));
+        shellcode.append((char*) prepare_env, sizeof(prepare_env));
+        _shellcode(shellcode);
+        shellcode.append((char*) restore_env, sizeof(restore_env) - 1);
+        shellcode.append((char*) jmp_x86, sizeof(jmp_x86));
+        shellcode.append((char*) restore_env_x86, sizeof(restore_env_x86));
+        return _X64DisptachExecute(shellcode);
+    }
+
+    DWORD64 Wow64NtCallExt::_X64DisptachExecute(std::string _shellcode) {
+        if ( _shellcode.empty() ) return 0;
+        DWORD64 result;
+        #ifdef _M_IX86
+        LPVOID pExecuteMemory = VirtualAlloc(
+            NULL,
+            _shellcode.size(),
+            MEM_COMMIT | MEM_RESERVE,
+            PAGE_READWRITE  
+        );
+        if ( !pExecuteMemory ) return 0;
+
+        memcpy(pExecuteMemory, _shellcode.data(), _shellcode.size());
+
+        DWORD oldProtect = 0;
+        VirtualProtect(pExecuteMemory, _shellcode.size(), PAGE_EXECUTE_READ, &oldProtect);
+        auto FnExecuteCode = (DWORD64(*)()) pExecuteMemory;
+
+        result = FnExecuteCode();
+        VirtualFree(pExecuteMemory, 0, MEM_RELEASE);
+        #endif
+        return result;
     }
 }
