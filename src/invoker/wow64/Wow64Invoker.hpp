@@ -55,7 +55,7 @@ namespace NtExt {
 			pShell->append((char*) Internal::backup_env, sizeof(Internal::backup_env));                  // backup x64 envirenment
 			pShell->append((char*) _prepare_env_temp, sizeof(_prepare_env_temp));                        // push the parameters onto the stack
 			EmitOpcode(pShell);                                                                          // splice call function method
-			pShell->append((char*) Internal::restore_env, sizeof(Internal::restore_env));                // restore x64 envirenment
+			pShell->append((char*) Internal::restore_env, sizeof(Internal::restore_env) - 1);            // restore x64 envirenment
 			pShell->append((char*) Internal::jmp_x86, sizeof(Internal::jmp_x86));                        // switch cs regester to 0x23
 			pShell->append((char*) Internal::restore_env_x86, sizeof(Internal::restore_env_x86));        // restore x86 envirenment
 			return TRUE;

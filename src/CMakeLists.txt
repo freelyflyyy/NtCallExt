@@ -1,15 +1,4 @@
-set(HEADER_CORE 
-    "NtCallExt.h"
-    "Wow64NtCallExt.h"
-    "X64NtCallExt.h"
-)
-set(SOURCE_CORE 
-    "NtCallExt.cpp"
-    "Wow64NtCallExt.cpp"
-    "X64NtCallExt.cpp"
-)
-source_group("Core" FILES ${HEADER_CORE} ${SOURCE_CORE})
-
+set(HEADER_MAIN "NtExt.hpp")
 
 set(HEADER_INTERNAL 
     "internal/NtApi.h"
@@ -30,20 +19,35 @@ set(HEADER_INVOKER
 
 source_group("Invoker" FILES ${HEADER_INVOKER})
 
+set(HEADER_RESOLVER 
+    "resolver/ResolverBase.hpp"
+    "resolver/wow64/Wow64Resolver.hpp"
+    "resolver/x64/X64Resolver.hpp"
+    "resolver/NtExtResolvers.hpp"
+)
+
+set(SOURCE_RESOLVER
+    "resolver/ResolverBase.cpp"
+    "resolver/wow64/Wow64Resolver.cpp"
+    "resolver/x64/X64Resolver.cpp"
+)
+source_group("Resolver" FILES ${HEADER_RESOLVER})
+
 set(HEADER_PCH 
     "pch/stdafx.h"
 )
 source_group("PCH" FILES ${HEADER_PCH})
 
 set(ALL_HEADERS 
-    ${HEADER_CORE} 
     ${HEADER_INTERNAL} 
     ${HEADER_INVOKER} 
+    ${HEADER_RESOLVER}
     ${HEADER_PCH}
+    ${HEADER_MAIN}
 )
 
 set(ALL_SOURCES 
-    ${SOURCE_CORE}
+    ${SOURCE_RESOLVER}
 )
 
 add_library(NtExt STATIC 

@@ -53,7 +53,7 @@ namespace NtExt {
 		public:
 		virtual ~InvokerBase() {
 			if ( _pExecuteMemory ) {
-				VirtualFree(_pExecuteMemory, NULL, MEM_RELEASE);
+				VirtualFree(_pExecuteMemory, 0, MEM_RELEASE);
 			}
 		}
 
@@ -61,22 +61,16 @@ namespace NtExt {
 		InvokerBase& operator=(const InvokerBase&) = delete;
 
 		template<typename... Args>
-		InvokerBase& operator()(_In_ Args... args) {
+		DWORD64 operator()(Args... args) {
 			memset(_global_args, 0, sizeof(_global_args));
 
 			if constexpr ( sizeof...(args) > 0 ) {
 				DWORD i = 0;
 				((_global_args[ i++ ] = (DWORD64) args), ...);
 			}
-			return *this;
+
+			return Invoke();
 		}
-
-
-		operator void() { Invoke(); }
-
-		template<typename T>
-		operator T() { return static_cast<T>(Invoke()); }
-
 
 		protected:
 		InvokerBase(_In_ DWORD64 target) : _global_target(target), _pExecuteMemory(nullptr){}
@@ -100,7 +94,8 @@ namespace NtExt {
 				if ( !_pExecuteMemory ) return 0;
 
 				memcpy(_pExecuteMemory, shellcode.data(), shellcode.size());
-				VirtualProtect(_pExecuteMemory, shellcode.size(), PAGE_EXECUTE_READ, NULL);
+				DWORD oldProtect;
+				VirtualProtect(_pExecuteMemory, shellcode.size(), PAGE_EXECUTE_READ, &oldProtect);
 			}
 
 			auto FnExecuteCode = (DWORD64(*)()) _pExecuteMemory;
