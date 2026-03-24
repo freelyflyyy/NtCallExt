@@ -1,18 +1,24 @@
-# NtExt
+<div align="center">
+  
+<h1>NtExt</h1>
 
 [English](README.md) | [简体中文](README_CN.md)
 
 [![Language](https://img.shields.io/badge/Language-C++17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B17)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20x86%2Fx64-lightgrey.svg)]()\
+[![Platform](https://img.shields.io/badge/Platform-Windows%20x64%20%7C%20WoW64-lightgrey.svg)]()
+[![Build](https://img.shields.io/badge/Build-CMake-orange.svg)]()
+[![Architecture](https://img.shields.io/badge/Arch-Zero%20Inline%20Assembly-critical.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 
-NtExt 是一个用于WoW64直接X64系统调用、天堂之门（Heaven's Gate）和EDR规避的高级C++框架。可无缝加载64位kernel32并绕过用户空间挂钩。
+</div>
+
+NtExt 是一个用于WoW64直接X64系统调用、X64地狱之门（Hell's Gate）和EDR规避的高级C++框架。可无缝加载64位kernel32并绕过用户空间挂钩。
 
 如果你厌倦了传统的 Heaven's Gate 、如果你的 32 位程序急需直接调用 64 位的底层 API、或者你在寻找一个能对抗顶级用户态 Hook 的解决方案，NtExt 将是你的最终选择。
 
 ## 核心特性
 
-* **Limbo's Gate (WoW64 Direct Syscall)**\
+* **Limbo's Gate (WoW64 Heaven’s Gate + Direct Syscall)**\
   我将这项技术命名为 **Limbo's Gate** 。它允许你在 32 位程序中动态解析系统调用号 (SSN) 并直接触发原生 64 位 `syscall` 指令，彻底绕过 32 位与 64 位 `ntdll.dll` 层面所有的 Ring 3 监控。
 * **WoW64 加载 64位 Kernel32.dll 难题**\
   在 WoW64 进程中强行加载 64 位 `kernel32.dll` 通常会因 `LdrLoadDll` 的 PEB 子系统验证而失败。NtExt 采用精确的 PEB 伪装技术（热切换 `IMAGE_SUBSYSTEM_WINDOWS_CUI` 到 `GUI`），完美欺骗系统加载器，实现 64 位模块的无损加载。
