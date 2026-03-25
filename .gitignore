@@ -40,7 +40,5 @@ build.ninja
 
 *.pch
 
-CMakePresets.json
-
 Thumbs.db
 .DS_Store
