@@ -3,6 +3,7 @@
 
 namespace NtExt {
 
+ 
     class ResolverBase {
         public:
         virtual ~ResolverBase() = default;
@@ -36,7 +37,7 @@ namespace NtExt {
 
         template<typename T>
         VOID MakeUTFStr(_In_z_ LPCWSTR lpString, _Out_writes_bytes_all_(sizeof(T) + wcslen(lpString) * 2 + 16) LPBYTE outBuffer) {
-            _MakeUTFStrVa(lpString, outBuffer, sizeof(T));
+            MakeUTFStrImpl(lpString, outBuffer, sizeof(T));
         }
 
         template<typename T>
@@ -49,7 +50,7 @@ namespace NtExt {
 
         template<typename T>
         VOID MakeANSIStr(_In_z_ LPCSTR lpString, _Out_writes_bytes_all_(sizeof(T) + strlen(lpString) + 16) LPBYTE outBuffer) {
-            _MakeANSIStrVa(lpString, outBuffer, sizeof(T));
+            MakeANSIStrImpl(lpString, outBuffer, sizeof(T));
         }
 
         template<typename T>
@@ -72,7 +73,7 @@ namespace NtExt {
             DWORD64 GetProcAddress64(_In_ DWORD64 hMod, _In_ const std::string& funcName) {
             if ( auto addr = IsCached64(funcName) ) return addr;
             if ( hMod == 0 ) return 0;
-            DWORD64 procAddr = _GetProcAddress64(hMod, funcName.data());
+            DWORD64 procAddr = GetProcAddress64Impl(hMod, funcName.data());
             if ( procAddr ) {
                 std::unique_lock<std::shared_mutex> lock(_mutex);
                 _cache[ funcName ] = procAddr;
@@ -95,10 +96,10 @@ namespace NtExt {
         }
 
         private:
-        virtual DWORD64 NTAPI _GetProcAddress64(_In_ DWORD64 hMod, _In_z_ const char* funcName) = 0;
+        virtual DWORD64 NTAPI GetProcAddress64Impl(_In_ DWORD64 hMod, _In_z_ const char* funcName) = 0;
 
-        VOID NTAPI _MakeUTFStrVa(_In_z_ LPCWSTR lpString, _Out_ LPBYTE outBuffer, _In_ SIZE_T pointerSize);
-        VOID NTAPI _MakeANSIStrVa(_In_z_ LPCSTR lpString, _Out_ LPBYTE outBuffer, _In_ SIZE_T pointerSize);
+        VOID NTAPI MakeUTFStrImpl(_In_z_ LPCWSTR lpString, _Out_ LPBYTE outBuffer, _In_ SIZE_T pointerSize);
+        VOID NTAPI MakeANSIStrImpl(_In_z_ LPCSTR lpString, _Out_ LPBYTE outBuffer, _In_ SIZE_T pointerSize);
 
         protected:
         ResolverBase() = default;

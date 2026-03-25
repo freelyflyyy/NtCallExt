@@ -38,7 +38,7 @@ namespace NtExt {
 
 		protected:
 		_Check_return_ _Success_(return != 0)
-			DWORD64 NTAPI _GetProcAddress64(_In_ DWORD64 hMod, _In_z_ const char* funcName) override;
+			DWORD64 NTAPI GetProcAddress64Impl(_In_ DWORD64 hMod, _In_z_ const char* funcName) override;
 
 		private:
 		X64Resolver() = default;

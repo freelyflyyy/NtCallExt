@@ -5,7 +5,7 @@
 namespace NtExt {
 	#ifdef _WIN64
 	_Check_return_ _Success_(return != 0)
-		DWORD64 NTAPI X64Resolver::_GetProcAddress64(_In_ DWORD64 hMod, _In_z_ const char* funcName) {
+		DWORD64 NTAPI X64Resolver::GetProcAddress64Impl(_In_ DWORD64 hMod, _In_z_ const char* funcName) {
 		if ( !hMod || !funcName ) return 0;
 		return (DWORD64) GetProcAddress((HMODULE) hMod, funcName);
 	}
@@ -16,26 +16,34 @@ namespace NtExt {
 		DWORD64 funcAddr64 = this->GetProcAddress64(hMod, funcName);
 		if ( !funcAddr64 ) return 0;
 
-		auto _getSSN = [this] (DWORD64& funcAddr) -> WORD {
+		auto _getSysPacked = [this] (DWORD64 funcAddr) -> DWORD64 {
 			BYTE* opcodes = (BYTE*) funcAddr;
 			if ( opcodes[ 0 ] == 0x4C && opcodes[ 1 ] == 0x8B && opcodes[ 2 ] == 0xD1 && opcodes[ 3 ] == 0xB8 ) {
-				return opcodes[ 5 ] << 8 | opcodes[ 4 ];
+				WORD _ssn = opcodes[ 5 ] << 8 | opcodes[ 4 ];
+				DWORD64 _syscallAddr = funcAddr + 8;
+				return ((DWORD64) _ssn << 48) | _syscallAddr;
 			}
 			return 0;
 		};
 
-		auto _seachImpl = [_getSSN] (auto&& self, DWORD64 upAddr, DWORD64 downAddr, WORD depth = 0) -> WORD {
+		auto _seachImpl = [&_getSysPacked] (auto&& self, DWORD64 upAddr, DWORD64 downAddr, WORD depth = 0) -> DWORD64 {
 			if ( depth >= 500 ) return 0;
-			WORD upSSN = _getSSN(upAddr);
-			WORD downSSN = _getSSN(downAddr);
-			if ( upSSN != 0 && downSSN != 0 ) {
-				if ( downSSN - upSSN == depth * 2 ) return upSSN + depth;
+			DWORD64 _upPacked = _getSysPacked(upAddr);
+			DWORD64 _downPacked = _getSysPacked(downAddr);
+			if ( _upPacked != 0 && _downPacked != 0 ) {
+				WORD _upSSN = (WORD) (_upPacked >> 48);
+				WORD _downSSN = (WORD) (_downPacked >> 48);
+				if ( _downSSN - _upSSN == depth * 2 ) {
+					WORD _targetSsn = _upSSN + depth;
+					DWORD64 _targetSyscallAddr = _upPacked & 0x0000FFFFFFFFFFFF;
+					return ((DWORD64) _targetSsn << 48) | _targetSyscallAddr;
+				}
 			}
 			return self(self, upAddr - 0x20, downAddr + 0x20, depth + 1);
 		};
 
-		WORD baseSSN = _getSSN(funcAddr64);
-		if ( baseSSN != 0 ) return baseSSN;
+		DWORD64 basePacked = _getSysPacked(funcAddr64);
+		if ( basePacked != 0 ) return basePacked;
 
 		return _seachImpl(_seachImpl, funcAddr64 - 0x20, funcAddr64 + 0x20, 1);
 	}

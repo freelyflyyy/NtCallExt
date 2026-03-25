@@ -77,7 +77,7 @@ namespace NtExt {
             DWORD GetProcAddress32(_In_ DWORD hMod, _In_ const std::string& funcName) {
             if ( auto addr = IsCached32(funcName) ) return addr;
             if ( hMod == 0 ) return 0;
-            DWORD procAddr = _GetProcAddress32(hMod, funcName.c_str());
+            DWORD procAddr = GetProcAddressImpl(hMod, funcName.c_str());
             if ( procAddr ) {
                 std::unique_lock<std::shared_mutex> lock(_mutex32);
                 _cache32[ funcName ] = procAddr;
@@ -101,8 +101,8 @@ namespace NtExt {
         }
 
         protected:
-        DWORD64 NTAPI _GetProcAddress64(_In_ DWORD64 hMod, _In_z_ const char* funcName) override;
-        DWORD NTAPI _GetProcAddress32(_In_ DWORD hMod, _In_z_ const char* funcName);
+        DWORD64 NTAPI GetProcAddress64Impl(_In_ DWORD64 hMod, _In_z_ const char* funcName) override;
+        DWORD NTAPI GetProcAddressImpl(_In_ DWORD hMod, _In_z_ const char* funcName);
 
         private:
         Wow64Resolver() = default;
