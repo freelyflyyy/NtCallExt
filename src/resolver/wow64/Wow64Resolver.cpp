@@ -1,5 +1,5 @@
 #include "Wow64Resolver.hpp"
-#include "../../internal/NtApi.h"
+#include "../../internal/NtStructs.h"
 #include "../../invoker/NtExtInvokers.hpp"
 
 namespace NtExt {
@@ -37,7 +37,7 @@ namespace NtExt {
 			memcpy64(&opcodes, funcAddr, sizeof(DWORD64));
 			if ( opcodes[ 0 ] == 0x4C && opcodes[ 1 ] == 0x8B && opcodes[ 2 ] == 0xD1 && opcodes[ 3 ] == 0xB8 ) {
 				WORD _ssn = opcodes[ 5 ] << 8 | opcodes[ 4 ];
-				DWORD64 _syscallAddr = funcAddr + 8;
+				DWORD64 _syscallAddr = funcAddr + 0x12;
 				return ((DWORD64) _ssn << 48) | _syscallAddr;
 			}
 			return 0;
@@ -175,7 +175,7 @@ namespace NtExt {
 		static DWORD64 _kernel64 = 0;
 		if ( _kernel64 != 0 ) return _kernel64;
 
-		DWORD64 LdrLoadDll = GetProcAddress64Impl(GetNtdll64(), "LdrLoadDll");
+		DWORD64 LdrLoadDll = GetProcAddress64(GetNtdll64(), "LdrLoadDll");
 		if ( !LdrLoadDll ) return 0;
 
 		BYTE kernel32Str[ 64 ] = { 0 };
@@ -231,14 +231,14 @@ namespace NtExt {
 
 		static DWORD64 pLoadLibraryW = 0;
 		if ( !pLoadLibraryW ) {
-			pLoadLibraryW = GetProcAddress64Impl(GetKernel64(), "LoadLibraryW");
+			pLoadLibraryW = GetProcAddress64(GetKernel64(), "LoadLibraryW");
 		}
 		if ( !pLoadLibraryW ) return 0;
 
 		return Call(pLoadLibraryW)((DWORD64) moduleName);
 	}
 
-	DWORD NTAPI Wow64Resolver::GetProcAddressImpl(_In_ DWORD hMod, _In_z_ const char* funcName) {
+	DWORD NTAPI Wow64Resolver::GetProcAddress32Impl(_In_ DWORD hMod, _In_z_ const char* funcName) {
 		if ( !hMod || !funcName ) return 0;
 		auto fnLdrGetProcedureAddress = (NTSTATUS(NTAPI*)(DWORD, DWORD, DWORD, DWORD*))(SIZE_T) GetLdrGetProcedureAddress32();
 		if ( !fnLdrGetProcedureAddress ) return 0;

@@ -175,7 +175,7 @@ namespace NtExt {
             DWORD GetProcAddress32(_In_ DWORD hMod, _In_ const std::string& funcName) {
             if ( auto addr = IsCached32(funcName) ) return addr;
             if ( hMod == 0 ) return 0;
-            DWORD procAddr = GetProcAddressImpl(hMod, funcName.c_str());
+            DWORD procAddr = GetProcAddress32Impl(hMod, funcName.c_str());
             if ( procAddr ) {
                 std::unique_lock<std::shared_mutex> lock(_mutex32);
                 _cache32[ funcName ] = procAddr;
@@ -224,7 +224,7 @@ namespace NtExt {
          * @param[in] funcName The function name.
          * @return The 32-bit function address.
          */
-        DWORD NTAPI GetProcAddressImpl(_In_ DWORD hMod, _In_z_ const char* funcName);
+        DWORD NTAPI GetProcAddress32Impl(_In_ DWORD hMod, _In_z_ const char* funcName);
 
         private:
         Wow64Resolver() = default;

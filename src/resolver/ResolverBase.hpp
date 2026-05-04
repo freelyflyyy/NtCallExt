@@ -128,9 +128,9 @@ namespace NtExt {
          */
         _Success_(return != 0)
             DWORD64 IsCached64(_In_ const std::string& funcName) {
-            std::shared_lock<std::shared_mutex> lock(_mutex);
-            auto it = _cache.find(funcName);
-            if ( it != _cache.end() ) return it->second;
+            std::shared_lock<std::shared_mutex> lock(_mutex64);
+            auto it = _cache64.find(funcName);
+            if ( it != _cache64.end() ) return it->second;
             return 0;
         }
 
@@ -146,8 +146,8 @@ namespace NtExt {
             if ( hMod == 0 ) return 0;
             DWORD64 procAddr = GetProcAddress64Impl(hMod, funcName.data());
             if ( procAddr ) {
-                std::unique_lock<std::shared_mutex> lock(_mutex);
-                _cache[ funcName ] = procAddr;
+                std::unique_lock<std::shared_mutex> lock(_mutex64);
+                _cache64[ funcName ] = procAddr;
             }
             return procAddr;
         }
@@ -186,7 +186,7 @@ namespace NtExt {
         protected:
         ResolverBase() = default;
 
-        std::unordered_map<std::string, DWORD64> _cache;
-        std::shared_mutex _mutex;
+        std::unordered_map<std::string, DWORD64> _cache64;
+        std::shared_mutex _mutex64;
     };
 }

@@ -1,5 +1,5 @@
 #include "X64Resolver.hpp"
-#include "../../internal/NtApi.h"
+#include "../../internal/NtStructs.h"
 #include "../../invoker/NtExtInvokers.hpp"
 
 namespace NtExt {
@@ -20,7 +20,7 @@ namespace NtExt {
 			BYTE* opcodes = (BYTE*) funcAddr;
 			if ( opcodes[ 0 ] == 0x4C && opcodes[ 1 ] == 0x8B && opcodes[ 2 ] == 0xD1 && opcodes[ 3 ] == 0xB8 ) {
 				WORD _ssn = opcodes[ 5 ] << 8 | opcodes[ 4 ];
-				DWORD64 _syscallAddr = funcAddr + 8;
+				DWORD64 _syscallAddr = funcAddr + 0x12;
 				return ((DWORD64) _ssn << 48) | _syscallAddr;
 			}
 			return 0;
